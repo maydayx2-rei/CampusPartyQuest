@@ -3,7 +3,7 @@
 <img width="516" height="516" alt="image" src="https://github.com/user-attachments/assets/317b3ef0-5f4d-4b39-90a9-781eed61718b" />
 
 📄 Project Document  
-[Conceptualization Document](docs/Conceptualization.pdf)
+[Conceptualization Document](1.Conceptualization.pdf)
 
 # 🎮 Campus Party Quest System
 
