@@ -2,6 +2,9 @@
 </p>
 <img width="516" height="516" alt="image" src="https://github.com/user-attachments/assets/317b3ef0-5f4d-4b39-90a9-781eed61718b" />
 
+📄 Project Document  
+[Conceptualization Document](docs/Conceptualization.pdf)
+
 # 🎮 Campus Party Quest System
 
 Campus Party Quest System은 캠퍼스 환경에서 게임 플레이어를 매칭하기 위한  
