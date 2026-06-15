@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Party Quest - 파티 목록</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d0f1a; min-height:100vh; font-family:'Noto Sans KR',sans-serif; color:#fff; display:flex; justify-content:center; }
+  .cpq { width:100%; max-width:420px; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; padding:18px 20px 12px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .topbar-logo { font-family:'Black Han Sans',sans-serif; font-size:16px; color:#fff; }
+  .topbar-right { display:flex; align-items:center; gap:10px; }
+  .trust-pill { background:rgba(20,184,166,.15); border:1px solid rgba(20,184,166,.3); border-radius:20px; padding:4px 10px; font-size:11px; color:#14b8a6; }
+  .avatar { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#14b8a6); display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; }
+  .tab-nav { display:flex; border-bottom:1px solid rgba(255,255,255,.07); padding:0 20px; }
+  .tab-nav span { padding:10px 16px; font-size:13px; color:rgba(255,255,255,.35); cursor:pointer; border-bottom:2px solid transparent; transition:.2s; }
+  .tab-nav span.on { color:#6366f1; border-bottom-color:#6366f1; font-weight:700; }
+  .list-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 8px; }
+  .list-title { font-size:13px; color:rgba(255,255,255,.4); }
+  .btn-create { background:linear-gradient(135deg,#6366f1,#4f46e5); border:none; border-radius:8px; padding:7px 14px; color:#fff; font-size:12px; font-weight:700; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
+  .party-card { margin:0 20px 12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:16px; cursor:pointer; transition:border-color .2s; }
+  .party-card:hover { border-color:rgba(99,102,241,.4); }
+  .pc-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .pc-game { display:flex; align-items:center; gap:8px; }
+  .pc-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .pc-name { font-size:14px; font-weight:700; }
+  .pc-sub { font-size:11px; color:rgba(255,255,255,.35); margin-top:1px; }
+  .badge { border-radius:6px; padding:3px 8px; font-size:11px; font-weight:700; }
+  .badge-OPEN { background:rgba(99,102,241,.2); color:#a5b4fc; }
+  .badge-READY { background:rgba(234,179,8,.2); color:#fde68a; }
+  .badge-MATCHED { background:rgba(20,184,166,.2); color:#14b8a6; }
+  .badge-CANCELLED,.badge-EXPIRED { background:rgba(239,68,68,.15); color:#f87171; }
+  .pc-bottom { display:flex; align-items:center; justify-content:space-between; }
+  .pc-members { display:flex; gap:4px; align-items:center; }
+  .dot { width:8px; height:8px; border-radius:50%; }
+  .dot-fill { background:#6366f1; }
+  .dot-empty { background:rgba(255,255,255,.15); }
+  .pc-host { font-size:11px; color:rgba(255,255,255,.3); }
+  .empty { text-align:center; color:rgba(255,255,255,.3); font-size:13px; padding:40px 20px; }
+
+  /* 파티 생성 모달 */
+  .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:100; align-items:flex-end; justify-content:center; }
+  .modal-bg.show { display:flex; }
+  .modal { background:#1a1c2e; border-radius:24px 24px 0 0; padding:28px 24px 36px; width:100%; max-width:420px; }
+  .modal-title { font-size:16px; font-weight:700; margin-bottom:20px; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:11px; color:rgba(255,255,255,.4); margin-bottom:6px; letter-spacing:.8px; text-transform:uppercase; }
+  .field input,.field select { width:100%; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:11px 14px; color:#fff; font-size:14px; font-family:'Noto Sans KR',sans-serif; outline:none; }
+  .field select option { background:#1a1c2e; }
+  .modal-btns { display:flex; gap:10px; margin-top:20px; }
+  .btn-cancel { flex:1; padding:13px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:12px; color:rgba(255,255,255,.6); font-size:14px; font-weight:700; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
+  .btn-submit { flex:2; padding:13px; background:linear-gradient(135deg,#6366f1,#4f46e5); border:none; border-radius:12px; color:#fff; font-size:14px; font-weight:700; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(20,184,166,.95); color:#fff; border-radius:12px; padding:12px 24px; font-size:13px; font-weight:700; display:none; z-index:200; }
+</style>
+</head>
+<body>
+<div class="cpq">
+  <div class="topbar">
+    <div class="topbar-logo">🎮 CPQ</div>
+    <div class="topbar-right">
+      <div class="trust-pill" id="trust-display">신뢰도 -</div>
+      <div class="avatar" onclick="logout()">👤</div>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <span class="on">파티 목록</span>
+    <span>내 파티</span>
+    <span>완료</span>
+  </div>
+  <div class="list-header">
+    <div class="list-title" id="list-count">모집 중인 파티 로딩 중...</div>
+    <button class="btn-create" onclick="openModal()">+ 파티 만들기</button>
+  </div>
+  <div id="party-list"></div>
+</div>
+
+<!-- 파티 생성 모달 -->
+<div class="modal-bg" id="modal-bg" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">새 파티 만들기</div>
+    <div class="field">
+      <label>게임 이름</label>
+      <input id="new-game" placeholder="예: 이터널리턴, 발로란트"/>
+    </div>
+    <div class="field">
+      <label>모집 인원</label>
+      <select id="new-members">
+        <option value="2">2명</option>
+        <option value="3">3명</option>
+        <option value="4">4명</option>
+        <option value="5">5명</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-submit" onclick="createParty()">파티 만들기</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const GAME_ICONS = { '이터널리턴':'⚔️','롤':'🏆','발로란트':'🎯','마인크래프트':'🧱','기본':'🎮' };
+
+function getIcon(title) {
+  return GAME_ICONS[title] || '🎮';
+}
+
+function getUser() {
+  return {
+    user_id: sessionStorage.getItem('user_id') || 'guest',
+    username: sessionStorage.getItem('username') || 'guest',
+    trust_score: sessionStorage.getItem('trust_score') || 100
+  };
+}
+
+function logout() {
+  sessionStorage.clear();
+  location.href = '/';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2200);
+}
+
+function openModal() {
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal-bg')) {
+    document.getElementById('modal-bg').classList.remove('show');
+  }
+}
+
+async function loadParties() {
+  const user = getUser();
+  document.getElementById('trust-display').textContent = '신뢰도 ' + user.trust_score;
+
+  const res = await fetch('/parties');
+  const parties = await res.json();
+  const open = parties.filter(p => p.status === 'OPEN' || p.status === 'READY');
+  document.getElementById('list-count').textContent = `모집 중인 파티 ${open.length}개`;
+
+  const box = document.getElementById('party-list');
+  if (!parties.length) {
+    box.innerHTML = '<div class="empty">아직 파티가 없어요.<br>첫 파티를 만들어보세요!</div>';
+    return;
+  }
+  box.innerHTML = parties.map(p => {
+    const filled = p.members.length;
+    const total = p.required_members;
+    const dots = Array.from({length: total}, (_, i) =>
+      `<div class="dot ${i < filled ? 'dot-fill' : 'dot-empty'}"></div>`
+    ).join('');
+    return `
+      <div class="party-card" onclick="goDetail('${p.party_id}')">
+        <div class="pc-top">
+          <div class="pc-game">
+            <div class="pc-icon" style="background:rgba(99,102,241,.2);">${getIcon(p.game_title)}</div>
+            <div>
+              <div class="pc-name">${p.game_title}</div>
+              <div class="pc-sub">파티장 ${p.host}</div>
+            </div>
+          </div>
+          <div class="badge badge-${p.status}">${statusLabel(p.status)}</div>
+        </div>
+        <div class="pc-bottom">
+          <div class="pc-members">
+            ${dots}
+            <span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:4px;">${filled} / ${total}</span>
+          </div>
+          <div class="pc-host">by ${p.host}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function statusLabel(s) {
+  return {OPEN:'모집중', READY:'레디중', MATCHED:'매칭완료', CANCELLED:'취소됨', EXPIRED:'만료됨'}[s] || s;
+}
+
+function goDetail(party_id) {
+  location.href = `/detail?id=${party_id}`;
+}
+
+async function createParty() {
+  const user = getUser();
+  const game_title = document.getElementById('new-game').value.trim();
+  const required_members = parseInt(document.getElementById('new-members').value);
+  if (!game_title) { showToast('게임 이름을 입력하세요.'); return; }
+  await fetch('/parties', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ host_id: user.user_id, game_title, required_members })
+  });
+  closeModal();
+  showToast('파티가 생성되었습니다!');
+  loadParties();
+}
+
+loadParties();
+setInterval(loadParties, 5000);
+</script>
+</body>
+</html>

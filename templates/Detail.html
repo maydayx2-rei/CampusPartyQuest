@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Party Quest - 파티 상세</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d0f1a; min-height:100vh; font-family:'Noto Sans KR',sans-serif; color:#fff; display:flex; justify-content:center; }
+  .cpq { width:100%; max-width:420px; }
+  .topbar { display:flex; align-items:center; gap:12px; padding:18px 20px 14px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .back-btn { width:28px; height:28px; border-radius:8px; background:rgba(255,255,255,.07); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; }
+  .topbar-title { font-size:15px; font-weight:700; }
+  .hero { padding:20px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .game-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .game-icon-lg { width:48px; height:48px; border-radius:12px; background:rgba(99,102,241,.2); display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .game-title { font-size:18px; font-weight:700; }
+  .game-meta { font-size:12px; color:rgba(255,255,255,.4); margin-top:2px; }
+  .info-row { display:flex; gap:8px; flex-wrap:wrap; }
+  .info-chip { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:5px 10px; font-size:11px; color:rgba(255,255,255,.6); }
+  .section { padding:18px 20px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .section-title { font-size:12px; color:rgba(255,255,255,.35); letter-spacing:.8px; text-transform:uppercase; margin-bottom:12px; }
+  .member-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .member-left { display:flex; align-items:center; gap:10px; }
+  .avatar { width:32px; height:32px; border-radius:50%; background:rgba(99,102,241,.25); display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .member-name { font-size:13px; font-weight:500; }
+  .member-trust { font-size:11px; color:rgba(255,255,255,.3); }
+  .host-tag { background:rgba(99,102,241,.2); color:#a5b4fc; border-radius:4px; padding:2px 6px; font-size:10px; font-weight:700; margin-left:6px; }
+  .ready-badge { border-radius:8px; padding:4px 10px; font-size:11px; font-weight:700; }
+  .ready-on { background:rgba(20,184,166,.2); color:#14b8a6; border:1px solid rgba(20,184,166,.3); }
+  .ready-off { background:rgba(255,255,255,.06); color:rgba(255,255,255,.35); border:1px solid rgba(255,255,255,.1); }
+  .progress-bar { background:rgba(255,255,255,.07); border-radius:8px; height:6px; margin-top:14px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:8px; background:linear-gradient(90deg,#6366f1,#14b8a6); transition:width .4s; }
+  .progress-text { font-size:11px; color:rgba(255,255,255,.3); margin-top:6px; text-align:right; }
+  .bottom-area { padding:20px; display:flex; flex-direction:column; gap:10px; }
+  .btn { width:100%; padding:14px; border:none; border-radius:14px; font-size:15px; font-weight:700; font-family:'Noto Sans KR',sans-serif; cursor:pointer; transition:opacity .2s; }
+  .btn-join { background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; }
+  .btn-ready-active { background:linear-gradient(135deg,#14b8a6,#0d9488); color:#fff; }
+  .btn-ready-done { background:rgba(20,184,166,.15); color:#14b8a6; border:1px solid rgba(20,184,166,.3); }
+  .btn-confirm { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; }
+  .btn-cancel { background:rgba(239,68,68,.15); color:#f87171; border:1px solid rgba(239,68,68,.2); }
+  .btn:hover { opacity:.88; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(20,184,166,.95); color:#fff; border-radius:12px; padding:12px 24px; font-size:13px; font-weight:700; display:none; z-index:200; white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="cpq">
+  <div class="topbar">
+    <div class="back-btn" onclick="location.href='/list'">←</div>
+    <div class="topbar-title">파티 상세</div>
+  </div>
+
+  <div class="hero" id="hero">
+    <div class="game-row">
+      <div class="game-icon-lg" id="hero-icon">🎮</div>
+      <div>
+        <div class="game-title" id="hero-title">로딩 중...</div>
+        <div class="game-meta" id="hero-meta"></div>
+      </div>
+    </div>
+    <div class="info-row" id="info-row"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">파티원 레디 현황</div>
+    <div id="member-list"></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="progress-text" id="progress-text"></div>
+  </div>
+
+  <div class="bottom-area" id="actions"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const PARTY_ID = params.get('id');
+const GAME_ICONS = { '이터널리턴':'⚔️','롤':'🏆','발로란트':'🎯','마인크래프트':'🧱' };
+
+function getUser() {
+  return {
+    user_id: sessionStorage.getItem('user_id') || 'guest',
+    username: sessionStorage.getItem('username') || 'guest'
+  };
+}
+
+function showToast(msg, color='rgba(20,184,166,.95)') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+async function api(method, path, body) {
+  const r = await fetch(path, {
+    method, headers:{'Content-Type':'application/json'},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  return r.json();
+}
+
+async function loadDetail() {
+  if (!PARTY_ID) { location.href = '/list'; return; }
+  const p = await api('GET', `/parties/${PARTY_ID}`);
+  if (p.error) { location.href = '/list'; return; }
+
+  const user = getUser();
+  const icon = GAME_ICONS[p.game_title] || '🎮';
+  document.getElementById('hero-icon').textContent = icon;
+  document.getElementById('hero-title').textContent = p.game_title;
+  document.getElementById('hero-meta').textContent = `${p.required_members}인 파티 · 파티장 ${p.host}`;
+  document.getElementById('info-row').innerHTML = `
+    <div class="info-chip">👑 ${p.host}</div>
+    <div class="info-chip">🎮 ${p.members.length} / ${p.required_members}명</div>
+    <div class="info-chip">${statusLabel(p.status)}</div>`;
+
+  // 멤버 목록
+  const AVATARS = ['😎','🙂','😄','🤩','😊'];
+  document.getElementById('member-list').innerHTML = p.members.map((m, i) => `
+    <div class="member-row">
+      <div class="member-left">
+        <div class="avatar">${AVATARS[i % AVATARS.length]}</div>
+        <div>
+          <div class="member-name">${m.user}${m.user === p.host ? '<span class="host-tag">파티장</span>' : ''}</div>
+          <div class="member-trust">멤버</div>
+        </div>
+      </div>
+      <div class="ready-badge ${m.is_ready ? 'ready-on' : 'ready-off'}">${m.is_ready ? '레디 ✓' : '대기중'}</div>
+    </div>`).join('') +
+    Array.from({length: p.required_members - p.members.length}, (_, i) => `
+    <div class="member-row">
+      <div class="member-left">
+        <div class="avatar" style="background:rgba(255,255,255,.06);">❓</div>
+        <div><div class="member-name" style="color:rgba(255,255,255,.3);">모집중...</div></div>
+      </div>
+      <div class="ready-badge ready-off">-</div>
+    </div>`).join('');
+
+  // 프로그레스바
+  const readyCount = p.members.filter(m => m.is_ready).length;
+  const pct = p.required_members > 0 ? (readyCount / p.required_members * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${readyCount} / ${p.required_members} 레디 완료`;
+
+  // 버튼 영역
+  const isHost = user.user_id === p.host;
+  const isMember = p.members.some(m => m.user === user.user_id);
+  const myReady = p.members.find(m => m.user === user.user_id)?.is_ready;
+  const allReady = p.members.length === p.required_members && p.members.every(m => m.is_ready);
+  let btns = '';
+
+  if (p.status === 'OPEN' && !isMember) {
+    btns += `<button class="btn btn-join" onclick="joinParty()">파티 참여하기</button>`;
+  }
+  if ((p.status === 'OPEN' || p.status === 'READY') && isMember && !myReady) {
+    btns += `<button class="btn btn-ready-active" onclick="setReady()">레디하기</button>`;
+  }
+  if ((p.status === 'OPEN' || p.status === 'READY') && isMember && myReady) {
+    btns += `<button class="btn btn-ready-done" disabled>레디 완료 ✓</button>`;
+  }
+  if (p.status === 'READY' && isHost && allReady) {
+    btns += `<button class="btn btn-confirm" onclick="confirmMatch()">매칭 수락하기 🎮</button>`;
+  }
+  if (p.status === 'MATCHED' && isHost) {
+    btns += `<button class="btn btn-confirm" onclick="completeQuest()">퀘스트 완료하기 🏆</button>`;
+  }
+  if ((p.status === 'OPEN' || p.status === 'READY') && isHost) {
+    btns += `<button class="btn btn-cancel" onclick="cancelParty()">파티 취소</button>`;
+  }
+  document.getElementById('actions').innerHTML = btns || `<p style="text-align:center;color:rgba(255,255,255,.3);font-size:13px;">${statusLabel(p.status)} 상태입니다.</p>`;
+}
+
+function statusLabel(s) {
+  return {OPEN:'모집중', READY:'레디중', MATCHED:'매칭완료', CANCELLED:'취소됨', EXPIRED:'만료됨'}[s] || s;
+}
+
+async function joinParty() {
+  const user = getUser();
+  const r = await api('POST', `/parties/${PARTY_ID}/join`, { user_id: user.user_id });
+  showToast(r.message, r.success ? 'rgba(20,184,166,.95)' : 'rgba(239,68,68,.9)');
+  if (r.success) setTimeout(loadDetail, 500);
+}
+
+async function setReady() {
+  const user = getUser();
+  const r = await api('POST', `/parties/${PARTY_ID}/ready`, { user_id: user.user_id });
+  showToast(r.message, r.success ? 'rgba(20,184,166,.95)' : 'rgba(239,68,68,.9)');
+  if (r.success) setTimeout(loadDetail, 500);
+}
+
+async function confirmMatch() {
+  const user = getUser();
+  const r = await api('POST', `/parties/${PARTY_ID}/confirm`, { requester_id: user.user_id });
+  showToast(r.message, r.success ? 'rgba(20,184,166,.95)' : 'rgba(239,68,68,.9)');
+  if (r.success) setTimeout(loadDetail, 500);
+}
+
+async function completeQuest() {
+  sessionStorage.setItem('complete_party_id', PARTY_ID);
+  location.href = '/complete';
+}
+
+async function cancelParty() {
+  if (!confirm('파티를 취소하시겠습니까?')) return;
+  const user = getUser();
+  const r = await api('POST', `/parties/${PARTY_ID}/cancel`, { requester_id: user.user_id });
+  showToast(r.message, r.success ? 'rgba(20,184,166,.95)' : 'rgba(239,68,68,.9)');
+  if (r.success) setTimeout(() => location.href = '/list', 1000);
+}
+
+loadDetail();
+setInterval(loadDetail, 5000);
+</script>
+</body>
+</html>

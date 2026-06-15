@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Party Quest - 퀘스트 완료</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d0f1a; min-height:100vh; font-family:'Noto Sans KR',sans-serif; color:#fff; display:flex; justify-content:center; }
+  .cpq { width:100%; max-width:420px; }
+  .topbar { display:flex; align-items:center; gap:12px; padding:18px 20px 14px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .back-btn { width:28px; height:28px; border-radius:8px; background:rgba(255,255,255,.07); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; }
+  .topbar-title { font-size:15px; font-weight:700; }
+  .complete-hero { padding:28px 20px 20px; text-align:center; border-bottom:1px solid rgba(255,255,255,.07); }
+  .complete-icon { font-size:48px; margin-bottom:12px; }
+  .complete-title { font-family:'Black Han Sans',sans-serif; font-size:22px; color:#fff; margin-bottom:6px; }
+  .complete-sub { font-size:13px; color:rgba(255,255,255,.4); }
+  .reward-section { padding:20px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .reward-title { font-size:12px; color:rgba(255,255,255,.35); letter-spacing:.8px; text-transform:uppercase; margin-bottom:14px; }
+  .reward-row { display:flex; gap:12px; }
+  .reward-card { flex:1; border-radius:14px; padding:16px; text-align:center; }
+  .reward-card.xp { border:1px solid rgba(99,102,241,.3); background:rgba(99,102,241,.07); }
+  .reward-card.pt { border:1px solid rgba(20,184,166,.3); background:rgba(20,184,166,.07); }
+  .reward-label { font-size:11px; color:rgba(255,255,255,.4); margin-bottom:8px; }
+  .reward-value { font-family:'Black Han Sans',sans-serif; font-size:28px; }
+  .reward-value.xp { color:#a5b4fc; }
+  .reward-value.pt { color:#14b8a6; }
+  .reward-unit { font-size:12px; color:rgba(255,255,255,.4); margin-top:2px; }
+  .eval-section { padding:20px; border-bottom:1px solid rgba(255,255,255,.07); }
+  .eval-title { font-size:12px; color:rgba(255,255,255,.35); letter-spacing:.8px; text-transform:uppercase; margin-bottom:12px; }
+  .eval-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .eval-name { font-size:13px; }
+  .eval-btns { display:flex; gap:6px; }
+  .eval-btn { border-radius:8px; padding:5px 12px; font-size:12px; cursor:pointer; border:1px solid; font-family:'Noto Sans KR',sans-serif; background:transparent; transition:.15s; }
+  .eval-good { color:#14b8a6; border-color:rgba(20,184,166,.3); }
+  .eval-bad { color:rgba(239,68,68,.7); border-color:rgba(239,68,68,.2); }
+  .eval-btn.selected-good { background:rgba(20,184,166,.3); color:#fff; border-color:rgba(20,184,166,.5); }
+  .eval-btn.selected-bad { background:rgba(239,68,68,.25); color:#fff; border-color:rgba(239,68,68,.4); }
+  .bottom-area { padding:20px; }
+  .btn-finish { width:100%; padding:14px; border:none; border-radius:14px; background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; font-size:15px; font-weight:700; font-family:'Noto Sans KR',sans-serif; cursor:pointer; transition:opacity .2s; }
+  .btn-finish:hover { opacity:.9; }
+  .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%); background:rgba(20,184,166,.95); color:#fff; border-radius:12px; padding:12px 24px; font-size:13px; font-weight:700; display:none; z-index:999; }
+</style>
+</head>
+<body>
+<div class="cpq">
+  <div class="topbar">
+    <div class="back-btn" onclick="location.href='/list'">←</div>
+    <div class="topbar-title">퀘스트 완료</div>
+  </div>
+
+  <div class="complete-hero">
+    <div class="complete-icon">🏆</div>
+    <div class="complete-title">파티 퀘스트 완료!</div>
+    <div class="complete-sub" id="complete-sub">로딩 중...</div>
+  </div>
+
+  <div class="reward-section">
+    <div class="reward-title">획득 보상</div>
+    <div class="reward-row">
+      <div class="reward-card xp">
+        <div class="reward-label">경험치</div>
+        <div class="reward-value xp" id="xp-val">+0</div>
+        <div class="reward-unit">XP</div>
+      </div>
+      <div class="reward-card pt">
+        <div class="reward-label">포인트</div>
+        <div class="reward-value pt" id="pt-val">+0</div>
+        <div class="reward-unit">PT</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="eval-section">
+    <div class="eval-title">파티원 평가</div>
+    <div id="eval-list"></div>
+  </div>
+
+  <div class="bottom-area">
+    <button class="btn-finish" onclick="finish()">완료하기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PARTY_ID = sessionStorage.getItem('complete_party_id');
+
+async function loadAndComplete() {
+  if (!PARTY_ID) { location.href = '/list'; return; }
+
+  // 파티 정보 조회
+  const party = await fetch(`/parties/${PARTY_ID}`).then(r => r.json());
+  document.getElementById('complete-sub').textContent = `${party.game_title} · ${party.required_members}인 파티`;
+
+  // 퀘스트 완료 + 보상 지급 API 호출
+  const res = await fetch(`/parties/${PARTY_ID}/complete`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ reward_type: 'XP', amount: 120 })
+  });
+  const data = await res.json();
+
+  // 보상 표시
+  if (data.rewards && data.rewards.length > 0) {
+    const myReward = data.rewards[0];
+    document.getElementById('xp-val').textContent = '+' + myReward.total_xp;
+    document.getElementById('pt-val').textContent = '+' + (myReward.total_point || 50);
+    sessionStorage.setItem('trust_score', myReward.trust_score);
+  } else {
+    document.getElementById('xp-val').textContent = '+120';
+    document.getElementById('pt-val').textContent = '+50';
+  }
+
+  // 파티원 평가 목록 (본인 제외)
+  const userId = sessionStorage.getItem('user_id') || 'guest';
+  const others = party.members.filter(m => m.user !== userId);
+  document.getElementById('eval-list').innerHTML = others.length
+    ? others.map(m => `
+        <div class="eval-row">
+          <div class="eval-name">${m.user}</div>
+          <div class="eval-btns">
+            <button class="eval-btn eval-good" onclick="select(this,'good')">👍 좋아요</button>
+            <button class="eval-btn eval-bad" onclick="select(this,'bad')">👎 별로</button>
+          </div>
+        </div>`).join('')
+    : '<p style="color:rgba(255,255,255,.3);font-size:13px;text-align:center;padding:12px 0;">평가할 파티원이 없습니다.</p>';
+}
+
+function select(btn, type) {
+  btn.closest('.eval-btns').querySelectorAll('.eval-btn')
+    .forEach(b => b.classList.remove('selected-good','selected-bad'));
+  btn.classList.add(type === 'good' ? 'selected-good' : 'selected-bad');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; location.href = '/list'; }, 2000);
+}
+
+function finish() {
+  sessionStorage.removeItem('complete_party_id');
+  showToast('✅ 평가 완료! 보상이 지급되었습니다.');
+}
+
+loadAndComplete();
+</script>
+</body>
+</html>
