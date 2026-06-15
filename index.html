@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Campus Party Quest</title>
+<style>
+  :root {
+    --bg: #14151a;
+    --card: #1e2029;
+    --card2: #262935;
+    --line: #353947;
+    --txt: #e8e9ee;
+    --sub: #9aa0b0;
+    --accent: #6c8cff;
+    --accent2: #4cd6a0;
+    --warn: #ff7a7a;
+    --gold: #ffce5c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--txt);
+    line-height: 1.5;
+    padding: 20px;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    padding: 16px 0 24px;
+  }
+  header h1 {
+    font-size: 26px;
+    letter-spacing: -0.5px;
+  }
+  header h1 .emoji { font-size: 24px; }
+  header p { color: var(--sub); font-size: 13px; margin-top: 4px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 15px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .card h2 .tag {
+    font-size: 10px;
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+  label { display:block; font-size: 12px; color: var(--sub); margin: 8px 0 4px; }
+  input, select {
+    width: 100%;
+    background: var(--card2);
+    border: 1px solid var(--line);
+    color: var(--txt);
+    padding: 9px 11px;
+    border-radius: 9px;
+    font-size: 14px;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.88; }
+  button.ghost { background: var(--card2); border: 1px solid var(--line); }
+  button.green { background: var(--accent2); }
+  button.gold { background: var(--gold); color: #2a2410; }
+  button.danger { background: var(--warn); }
+
+  .party {
+    background: var(--card2);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .party .top { display:flex; justify-content: space-between; align-items: center; }
+  .party .title { font-size: 15px; font-weight: 600; }
+  .party .meta { font-size: 12px; color: var(--sub); margin-top: 3px; }
+  .badge {
+    font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600;
+  }
+  .b-OPEN { background: #2a3a5c; color: #9cc0ff; }
+  .b-READY { background: #3a3320; color: var(--gold); }
+  .b-MATCHED { background: #1f3d30; color: var(--accent2); }
+  .b-CANCELLED, .b-EXPIRED { background: #3d2424; color: var(--warn); }
+
+  .members { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .member {
+    font-size: 12px; background: var(--card); border: 1px solid var(--line);
+    padding: 4px 9px; border-radius: 7px;
+  }
+  .member.ready { border-color: var(--accent2); color: var(--accent2); }
+
+  .actions { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 7px; }
+  .actions button { margin-top: 0; font-size: 12px; padding: 7px 12px; }
+
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--card2); border: 1px solid var(--accent);
+    color: var(--txt); padding: 11px 18px; border-radius: 10px;
+    font-size: 13px; opacity: 0; transition: opacity 0.25s; pointer-events: none;
+    max-width: 90%; text-align: center;
+  }
+  #toast.show { opacity: 1; }
+  .empty { color: var(--sub); font-size: 13px; text-align: center; padding: 20px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="emoji">🎮</span> Campus Party Quest</h1>
+  <p>캠퍼스 게임 파티 매칭 시스템</p>
+</header>
+
+<!-- 파티 생성 -->
+<div class="card">
+  <h2><span class="tag">UC3</span> 파티 생성</h2>
+  <label>내 ID (파티장)</label>
+  <input id="hostId" placeholder="예: seonju" value="seonju"/>
+  <div class="row">
+    <div>
+      <label>게임 이름</label>
+      <input id="gameTitle" placeholder="예: 롤" value="롤"/>
+    </div>
+    <div>
+      <label>모집 인원</label>
+      <input id="reqMembers" type="number" value="2" min="2"/>
+    </div>
+  </div>
+  <button onclick="createParty()">파티 만들기</button>
+</div>
+
+<!-- 파티 목록 -->
+<div class="card">
+  <h2><span class="tag">UC4~11</span> 파티 목록</h2>
+  <button class="ghost" onclick="loadParties()">새로고침</button>
+  <div id="partyList" style="margin-top:12px;">
+    <div class="empty">아직 파티가 없어요. 위에서 만들어보세요!</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = ""; // 같은 서버에서 서빙되므로 상대경로
+
+function toast(msg, ok=true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = ok ? 'var(--accent2)' : 'var(--warn)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+async function api(method, path, body) {
+  const opt = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opt.body = JSON.stringify(body);
+  const res = await fetch(API + path, opt);
+  return res.json();
+}
+
+async function createParty() {
+  const host_id = document.getElementById('hostId').value.trim();
+  const game_title = document.getElementById('gameTitle').value.trim();
+  const required_members = parseInt(document.getElementById('reqMembers').value);
+  if (!host_id || !game_title) { toast('ID와 게임 이름을 입력하세요.', false); return; }
+  await api('POST', '/parties', { host_id, game_title, required_members });
+  toast('파티가 생성되었습니다!');
+  loadParties();
+}
+
+async function loadParties() {
+  const parties = await api('GET', '/parties');
+  const box = document.getElementById('partyList');
+  if (!parties.length) {
+    box.innerHTML = '<div class="empty">아직 파티가 없어요.</div>';
+    return;
+  }
+  box.innerHTML = parties.map(renderParty).join('');
+}
+
+function renderParty(p) {
+  const members = p.members.map(m =>
+    `<span class="member ${m.is_ready ? 'ready' : ''}">${m.user}${m.is_ready ? ' ✓' : ''}</span>`
+  ).join('');
+
+  // 상태별 가능한 액션 버튼
+  let actions = '';
+  if (p.status === 'OPEN') {
+    actions = `
+      <button class="ghost" onclick="joinParty('${p.party_id}')">참여</button>
+      <button class="danger" onclick="cancelParty('${p.party_id}','${p.host}')">취소</button>`;
+  } else if (p.status === 'READY') {
+    actions = `
+      <button class="ghost" onclick="setReady('${p.party_id}')">레디</button>
+      <button class="green" onclick="confirmMatch('${p.party_id}','${p.host}')">매칭 수락(파티장)</button>`;
+  } else if (p.status === 'MATCHED') {
+    actions = `
+      <button class="gold" onclick="completeQuest('${p.party_id}')">퀘스트 완료 + 보상</button>`;
+  }
+
+  return `
+    <div class="party">
+      <div class="top">
+        <div>
+          <div class="title">${p.game_title}</div>
+          <div class="meta">${p.party_id} · 파티장 ${p.host} · ${p.members.length}/${p.required_members}명</div>
+        </div>
+        <span class="badge b-${p.status}">${p.status}</span>
+      </div>
+      <div class="members">${members}</div>
+      <div class="actions">${actions}</div>
+    </div>`;
+}
+
+async function joinParty(pid) {
+  const user_id = prompt('참여할 사용자 ID를 입력하세요:', 'player2');
+  if (!user_id) return;
+  const r = await api('POST', `/parties/${pid}/join`, { user_id });
+  toast(r.message, r.success);
+  loadParties();
+}
+
+async function setReady(pid) {
+  const user_id = prompt('레디할 사용자 ID:', 'seonju');
+  if (!user_id) return;
+  const r = await api('POST', `/parties/${pid}/ready`, { user_id });
+  toast(r.message, r.success);
+  loadParties();
+}
+
+async function confirmMatch(pid, host) {
+  const r = await api('POST', `/parties/${pid}/confirm`, { requester_id: host });
+  toast(r.message, r.success);
+  loadParties();
+}
+
+async function cancelParty(pid, host) {
+  const r = await api('POST', `/parties/${pid}/cancel`, { requester_id: host });
+  toast(r.message, r.success);
+  loadParties();
+}
+
+async function completeQuest(pid) {
+  const type = confirm('확인=XP 보상 / 취소=포인트 보상') ? 'XP' : 'POINT';
+  const r = await api('POST', `/parties/${pid}/complete`, { reward_type: type, amount: 50 });
+  if (r.success && r.rewards.length) {
+    const lines = r.rewards.map(x => `${x.user}: ${x.reward_type} +${x.amount} (신뢰도 ${x.trust_score})`).join('\n');
+    toast(r.message);
+    alert('🎁 보상 지급 결과\n\n' + lines);
+  } else {
+    toast(r.message, r.success);
+  }
+  loadParties();
+}
+
+// 시작 시 목록 로드
+loadParties();
+</script>
+</body>
+</html>
