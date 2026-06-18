@@ -1,18 +1,21 @@
 """
 Campus Party Quest - FastAPI 서버
 실행: uvicorn main:app --reload
-문서: http://127.0.0.1:8000/docs
+
 """
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
+
 from pydantic import BaseModel
 import os
 
 from services import PartyQuestService
 
+
 app = FastAPI(title="Campus Party Quest", version="1.0")
 service = PartyQuestService()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 
 # ── 요청 본문 ──
@@ -59,19 +62,19 @@ def party_to_dict(p):
 # ════════ 페이지 라우팅 ════════
 @app.get("/")
 def serve_login():
-    return FileResponse(os.path.join(BASE_DIR, "templates", "login.html"))
+    return FileResponse(os.path.join(BASE_DIR, "templates", "Login.html"))
 
 @app.get("/list")
 def serve_list():
-    return FileResponse(os.path.join(BASE_DIR, "templates", "list.html"))
+    return FileResponse(os.path.join(BASE_DIR, "templates", "List.html"))
 
 @app.get("/detail")
 def serve_detail():
-    return FileResponse(os.path.join(BASE_DIR, "templates", "detail.html"))
+    return FileResponse(os.path.join(BASE_DIR, "templates", "Detail.html"))
 
 @app.get("/complete")
 def serve_complete():
-    return FileResponse(os.path.join(BASE_DIR, "templates", "complete.html"))
+    return FileResponse(os.path.join(BASE_DIR, "templates", "Complete.html"))
 
 
 # ════════ AUTH API ════════
