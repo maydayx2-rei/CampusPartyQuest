@@ -3,7 +3,7 @@
 캠퍼스 환경에서 게임 플레이어를 매칭하는 **퀘스트 기반 파티 매칭 시스템**입니다.
 
 - **언어**: Python (FastAPI)
-- **배포 URL**: ()
+- **배포 URL**: (https://campuspartyquest.onrender.com/) 6월 29일까지 서버 오픈
 
 ## 실행 방법
 
